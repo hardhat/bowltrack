@@ -31,7 +31,7 @@ int main(int argc,char **argv)
 	int quit=0;
 	while(!quit) {
 		SDL_RenderClear(renderer);
-		draw();
+		draw(renderer);
 		SDL_RenderPresent(renderer);
 	
 		// message loop
@@ -47,7 +47,9 @@ int main(int argc,char **argv)
 			}
 		}
 		
-		SDL_Delay(100);
+		SDL_Delay(50);
+		
+		update(50);
 	}
 	SDL_DestroyWindow(rootWindow);
 		

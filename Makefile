@@ -1,6 +1,6 @@
 CFLAGS=$(shell sdl2-config --cflags)
 LDFLAGS=$(shell sdl2-config --libs)
-OBJ=main.o render.o bowl.o map.o
+OBJ=main.o render.o bowl.o map.o export.o
 
 bowltrack: $(OBJ)
 	g++ -o bowltrack $(OBJ) $(LDFLAGS)
