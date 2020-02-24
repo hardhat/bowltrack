@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include <SDL.h>
+#include <SDL_image.h>
 
 #include "render.h"
 #include "bowl.h"
@@ -16,6 +17,8 @@ int frame=0;
 int mapNode=0;
 int mapPos=0;
 int mapPosMax=6;
+SDL_Surface *spriteSurface=NULL;
+SDL_Texture *spriteTexture=NULL;
 
 void mapToWorld(int mx,int my,int mz,double *wx,double *wy,double *wz)
 {
@@ -170,6 +173,16 @@ void draw(SDL_Renderer *renderer)
 			lastsx=point[0].x;
 		}
 	}
+
+	// Player
+	rect.x=128;
+	rect.y=192-80;
+	rect.w=48;
+	rect.h=64;
+	SDL_Rect src={mapNode*48,0,48,64};
+	if(!spriteSurface) spriteSurface=IMG_Load("sprites.png");
+	if(spriteSurface && !spriteTexture) spriteTexture=SDL_CreateTextureFromSurface(renderer,spriteSurface);
+	if(spriteTexture) SDL_RenderCopy(renderer,spriteTexture,&src,&rect);
 
 	// Sky
 	SDL_SetRenderDrawColor(renderer,64,96,224,255);
