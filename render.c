@@ -102,7 +102,7 @@ void draw(SDL_Renderer *renderer)
 		double wx1,wy1,wz1;
 		SDL_Point point[2];
 		
-		if((y%2)==0) {
+		if((y%2)==0 && y<6) {
 			SDL_SetRenderDrawColor(renderer,64,192,224,255);
 		} else {
 			SDL_SetRenderDrawColor(renderer,224,224,224,255);
