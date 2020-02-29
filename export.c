@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <SDL.h>
 
 #include "export.h"
@@ -32,7 +35,7 @@ tml
 |  D  | Magenta      | 182 100 199 | 192  64 160 |
 |  E  | Grey         | 204 204 204 | 160 160 160 |
 |  F  | White        | 255 255 255 | 224 224 224 |
-==================================================  
+==================================================
 */
 const unsigned char colecoPalette[16][3]={
 	{0,0,0},	// transparent
@@ -40,9 +43,10 @@ const unsigned char colecoPalette[16][3]={
 	{32,192,32},	// medium green
 	{96,224,96},	// light green
 	{32,32,224},	// dark blue
+	{64,96,224},    // light blue
 	{160,32,32},	// dark red
 	{64,192,224},	// cyan
-	{215,107,72},	// medium red
+	{224,32,32},	// medium red
 	{224,96,96},	// light red
 	{192,192,32},	// dark yellow
 	{192,192,128},	// light yellow
@@ -56,6 +60,9 @@ unsigned char nameTable[3][256];
 unsigned char patternTable[3][2048];
 unsigned char colorTable[3][2048];
 int nextCard[3]={0,0,0};
+int mergeDuplicates=1;
+
+int colorTracker[16];
 
 void resetExport()
 {
@@ -70,6 +77,8 @@ void resetExport()
 			patternTable[j][i]=0;
 		}
 	}
+    for(j=0;j<16;j++) colorTracker[j]=0;
+    mergeDuplicates=1;
 }
 
 int rgbToColecoPalette(unsigned char *pixel)
@@ -82,7 +91,7 @@ int rgbToColecoPalette(unsigned char *pixel)
 		int dist=0;
 		int delta;
 		int j;
-		
+
 		for(j=0;j<3;j++) {
 			delta=pixel[j]-colecoPalette[i][j];
 			dist+=delta*delta;
@@ -92,6 +101,7 @@ int rgbToColecoPalette(unsigned char *pixel)
 			bestDist=dist;
 		}
 	}
+	colorTracker[bestColor]++;
 
 	return bestColor;
 }
@@ -107,7 +117,7 @@ void encodeSegment(unsigned char *pixels,unsigned char *pattern,unsigned char *c
 	for(i=0;i<16;i++) freq[i]=0;
 	// map colors to coleco palette
 	for(i=0;i<8;i++) {
-		pix[i]=rgbToColecoPalette(pixels+i*3);
+		pix[i]=rgbToColecoPalette(pixels+i*4);
 		freq[pix[i]]++;
 	}
 	// survey colors
@@ -121,7 +131,7 @@ void encodeSegment(unsigned char *pixels,unsigned char *pattern,unsigned char *c
 
 			temp=fgFreq;
 			fgFreq=bgFreq;
-			bg=temp;
+			bgFreq=temp;
 
 			temp=fg;
 			fg=bg;
@@ -144,7 +154,9 @@ int mergeDuplicateCard(int region,int card)
 	int i;
 	unsigned char *targetPattern=&patternTable[region][card<<3];
 	unsigned char *targetColor=&colorTable[region][card<<3];
-	
+
+    if(mergeDuplicates==0) return card;
+
 	for(i=0;i<card;i++) {
 		int offset=i<<3;
 		int j;
@@ -153,12 +165,12 @@ int mergeDuplicateCard(int region,int card)
 			if(targetPattern[j]!=patternTable[region][offset+j] ||
 			targetColor[j]!=colorTable[region][offset+j]) {
 				match=0;
-				break;  
+				break;
 			}
 		}
 		if(match) return i;
 	}
-	
+
 	return card;
 }
 
@@ -170,9 +182,11 @@ int encodeCard(SDL_Renderer *renderer,int x,int y)
 	}
 
 	SDL_Rect rect={x,y,8,8};
-	unsigned char pixels[64*3];
-	SDL_RenderReadPixels(renderer,&rect,SDL_PIXELFORMAT_RGB888,pixels,8*3);
-	
+	unsigned char pixels[64*4];
+	int i;
+	for(i=0;i<sizeof(pixels);i++) pixels[i]=0;
+	SDL_RenderReadPixels(renderer,&rect,SDL_PIXELFORMAT_ABGR8888,pixels,8*4);
+
 	int region=y/64;
 	int nameCell=x/8+32*(y/8-region*8);
 	if(nextCard[region]>255) {
@@ -180,21 +194,21 @@ int encodeCard(SDL_Renderer *renderer,int x,int y)
 		return -2;
 	}
 	int pcCell=nextCard[region]*8;
-	
-	int i;
+
 	for(i=0;i<8;i++) {
-		encodeSegment(pixels+i*8*3,patternTable[region]+pcCell+i,colorTable[region]+pcCell+i);
-	}
+		encodeSegment(pixels+i*8*4,patternTable[region]+pcCell+i,colorTable[region]+pcCell+i);
+    }
+
 	int card=mergeDuplicateCard(region,nextCard[region]);
 	nameTable[region][nameCell]=card;
 	if(card==nextCard[region]) nextCard[region]++;
-	
+
 	return 0;
 }
 
 void encodeScreen(SDL_Renderer *renderer)
 {
-	int i,j;
+    int i,j;
 	for(j=0;j<192;j+=8) {
 		for(i=0;i<256;i+=8) {
 			encodeCard(renderer,i,j);
@@ -205,15 +219,22 @@ void encodeScreen(SDL_Renderer *renderer)
 void exportPC(SDL_Renderer *renderer,const char *filename)
 {
 	resetExport();
+	//mergeDuplicates=0;
 	encodeScreen(renderer);
-	
-	int i,j;
+
+	int j;
+	for(j=0;j<16;j++) {
+        if(colorTracker[j]>0) {
+            printf("freq %d: %d\n",j,colorTracker[j]);
+        }
+	}
+
 	FILE *file=fopen(filename,"wb");
 	if(!file) {
 		printf("*** Cannot create file '%s'\n",filename);
 		return;
 	}
-	
+
 	for(j=0;j<3;j++) {
 		fwrite(patternTable[j],256,8,file);
 	}
@@ -227,23 +248,28 @@ void exportPC(SDL_Renderer *renderer,const char *filename)
 void exportPC2C(const char *filename)
 {
 	int i,j;
+	char base[256];
 	FILE *file=fopen(filename,"w");
 	if(!file) {
 		printf("*** Cannot create file '%s'\n",filename);
 		return;
 	}
-	
-	for(j=0;j<3;j++) {
-		fprintf(file,"int %s_region%d_size=%d;\n",filename,j,nextCard[j]*8);
+	strcpy(base,filename);
+	if(strchr(base,'.')) {
+        strchr(base,'.')[0]=0;
+	}
 
-		fprintf(file,"unsigned char %s_pattern_region%d[]={\n	",filename,j);
+	for(j=0;j<3;j++) {
+		fprintf(file,"const int %s_region%d_size=%d;\n",filename,j,nextCard[j]*8);
+
+		fprintf(file,"const unsigned char %s_pattern_region%d[]={\n	",base,j);
 		for(i=0;i<nextCard[j]*8;i++) {
 			fprintf(file,"0x%02x,",patternTable[j][i]);
 			if((i%8)==7) fprintf(file,"\n	");
 		}
 		fprintf(file,"}; // region %d\n\n",j);
 
-		fprintf(file,"unsigned char %s_color_region%d[]={\n	",filename,j);
+		fprintf(file,"const unsigned char %s_color_region%d[]={\n	",base,j);
 		for(i=0;i<nextCard[j]*8;i++) {
 			fprintf(file,"0x%02x,",colorTable[j][i]);
 			if((i%8)==7) fprintf(file,"\n	");
@@ -255,15 +281,20 @@ void exportPC2C(const char *filename)
 
 void exportName2C(const char *filename)
 {
+	char base[256];
 	FILE *file=fopen(filename,"w");
 	if(!file) {
 		printf("*** Cannot create file '%s'\n",filename);
 		return;
 	}
-	
+	strcpy(base,filename);
+	if(strchr(base,'.')) {
+        strchr(base,'.')[0]=0;
+	}
+
 	int i,j;
 	for(j=0;j<3;j++) {
-		fprintf(file,"unsigned char %s_name%d[]={\n	",filename,j);
+		fprintf(file,"const unsigned char %s_name%d[]={\n	",base,j);
 		for(i=0;i<256;i++) {
 			fprintf(file,"0x%02x,",nameTable[j][i]);
 			if((i%8)==7) fprintf(file,"\n	");
@@ -273,21 +304,16 @@ void exportName2C(const char *filename)
 	fclose(file);
 }
 
+extern SDL_Window *rootWindow;
+
 void exportBMP(SDL_Renderer *renderer,const char *filename)
 {
-	int width=256;
-	int height=192;
-	SDL_Rect rect={0,0,width,height};
-	unsigned char *pixels=(unsigned char *)malloc(width*height*3);
-	SDL_RenderReadPixels(renderer,&rect,SDL_PIXELFORMAT_RGB888,pixels,width*3);
+   SDL_Surface* screenShot = SDL_CreateRGBSurface(0, 256, 192, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
 
-	SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormatFrom(pixels, width, height, 24, width*3, SDL_PIXELFORMAT_RGB888);
-    if (surf == NULL) {
-        SDL_Log("SDL_CreateRGBSurfaceWithFormat() failed: %s", SDL_GetError());
-        exit(1);
-    }
-    SDL_SaveBMP(surf,filename);
-    
-	SDL_FreeSurface(surf);
-	free(pixels);	
+   if(screenShot)
+   {
+      SDL_RenderReadPixels(renderer, NULL, SDL_GetWindowPixelFormat(rootWindow), screenShot->pixels, screenShot->pitch);
+      SDL_SaveBMP(screenShot, filename);
+      SDL_FreeSurface(screenShot);
+   }
 }

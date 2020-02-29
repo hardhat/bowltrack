@@ -1,10 +1,12 @@
 #include <stdio.h>
+#include <unistd.h>
 
 #include <SDL.h>
 #include <SDL_image.h>
 
 #include "render.h"
 #include "bowl.h"
+#include "export.h"
 
 double localTranslate[3]={0.0,-16.0,0.0};
 double worldScale[3]={8.0,64.0,1.0};
@@ -39,7 +41,7 @@ void mapToWorld(int mx,int my,int mz,double *wx,double *wy,double *wz)
 	*wx=(mx+curl+localTranslate[0])*worldScale[0]+worldTranslate[0];
 	*wy=(my+localTranslate[1])*worldScale[1]+worldTranslate[1];
 	*wz=(mz+localTranslate[2])*worldScale[2]+worldTranslate[2];
-	
+
 	//printf("map (%d,%d,%d) -> world (%lf,%lf,%lf)\n",mx,my,mz,*wx,*wy,*wz);
 }
 
@@ -58,7 +60,7 @@ int mapToClippedScreen(struct Bowl *bowl,int mx,int my,int mz,SDL_Point *point)
 	point[0].x=0;
 	point[0].y=0;
 	if(my+1>=bowl->length) return 0;
-	
+
 	double wx,wy,wz;
 	mapToWorld(mx,my,mz,&wx,&wy,&wz);
 	if(wy<=0.0) return 0;
@@ -70,7 +72,7 @@ int mapToClippedScreen(struct Bowl *bowl,int mx,int my,int mz,SDL_Point *point)
 		//wz=wz*per+wz1*(1-per);
 	}
 	worldToScreen(wx,wy,wz,point);
-	
+
 	return 1;
 }
 
@@ -78,7 +80,7 @@ int mapToClippedScreen(struct Bowl *bowl,int mx,int my,int mz,SDL_Point *point)
 void draw(SDL_Renderer *renderer)
 {
 	SDL_Rect rect={0,0,256,192};
-	
+
 	// Draw Snow
 	SDL_SetRenderDrawColor(renderer,64,96,224,255);
 	rect.y=64;
@@ -95,7 +97,7 @@ void draw(SDL_Renderer *renderer)
 	worldScale[2]=0.8;
 	frameCycle=5;
 	frameYIncrement=-worldScale[1]/frameCycle*2.0;
-	
+
 	int x,y;
 	for(y=bowl->length-1;y>=0;y--) {
 		double wx,wy,wz;
@@ -110,7 +112,7 @@ void draw(SDL_Renderer *renderer)
 		//printf("length %d (%s)\n",y,(y%2)==0?"blue":"white");
 
 		if(y+1>=bowl->length) continue;
-		
+
 		// fill horizontal left
 		mapToWorld(0,y+1,bowl->elevation[0+(y-1)*bowl->width],&wx1,&wy1,&wz1);
 		if(wy1<screenD) continue;
@@ -147,9 +149,9 @@ void draw(SDL_Renderer *renderer)
 			SDL_RenderFillRect(renderer,&right);
 		}
 		//printf("right (%d,%d)+%dx+%d\n",right.x,right.y,right.w,right.h);
-		
+
 		int lastsx=256;
-		
+
 		for(x=0;x<bowl->width;x++) {
 			if(y+1>=bowl->length) continue;
 			mapToWorld(x,y+1,bowl->elevation[x+(y-1)*bowl->width],&wx1,&wy1,&wz1);
@@ -163,7 +165,7 @@ void draw(SDL_Renderer *renderer)
 				wz=wz*per+wz1*(1-per);
 			}
 			worldToScreen(wx,wy,wz,point+0);
-			
+
 			//printf("line (%d,%d)-(%d,%d)\n",point[0].x,point[0].y,point[0].x,191);
 			SDL_RenderDrawLine(renderer,point[0].x,point[0].y,point[0].x,191);
 			if(lastsx+1<point[0].x) {
@@ -174,16 +176,6 @@ void draw(SDL_Renderer *renderer)
 		}
 	}
 
-	// Player
-	rect.x=128;
-	rect.y=192-80;
-	rect.w=48;
-	rect.h=64;
-	SDL_Rect src={mapNode*48,0,48,64};
-	if(!spriteSurface) spriteSurface=IMG_Load("sprites.png");
-	if(spriteSurface && !spriteTexture) spriteTexture=SDL_CreateTextureFromSurface(renderer,spriteSurface);
-	if(spriteTexture) SDL_RenderCopy(renderer,spriteTexture,&src,&rect);
-
 	// Sky
 	SDL_SetRenderDrawColor(renderer,64,96,224,255);
 	rect.x=0;
@@ -191,7 +183,52 @@ void draw(SDL_Renderer *renderer)
 	rect.w=256;
 	rect.h=64;
 	SDL_RenderFillRect(renderer,&rect);
-	
+
+	{
+	    static int exp=0;
+	    char path[256];
+	    if(exp<3) {
+            exp++;
+            if(exp==1) resetExport();
+            encodeScreen(renderer);
+            sprintf(path,"testname%d.c",exp);
+            exportName2C(path);
+            sprintf(path,"testpatcol%d.c",exp);
+            exportPC2C(path);
+            //if(exp==1) exportPC(renderer,path);
+	    }
+	}
+
+	// Player
+	rect.x=128;
+	rect.y=192-80;
+	rect.w=48;
+	rect.h=64;
+	SDL_Rect src={mapNode*48,0,48,64};
+	if(!spriteSurface) spriteSurface=IMG_Load("sprites.tga");
+
+	if(!spriteSurface) {
+        char buf[256];
+        printf("Couldn't find sprites.png in directory %s\n", getcwd(buf,sizeof(buf)));
+	}
+
+	if(spriteSurface && !spriteTexture) spriteTexture=SDL_CreateTextureFromSurface(renderer,spriteSurface);
+	if(spriteTexture) SDL_RenderCopy(renderer,spriteTexture,&src,&rect);
+
+	/*
+	{
+	    static int exp=0;
+	    char path[256];
+	    if(exp<6) {
+            exp++;
+            sprintf(path,"test%d.pc",exp);
+            if(exp==1) exportPC(renderer,path);
+            sprintf(path,"test%d.bmp",exp);
+            exportBMP(renderer,path);
+	    }
+	}
+	*/
+
 	// Hud
 	SDL_SetRenderDrawColor(renderer,224,224,224,255);
 	rect.x=64;
@@ -220,7 +257,6 @@ void draw(SDL_Renderer *renderer)
 	if(map[mapNode].type==MT_TURNRIGHT) rect.x=128-16;
 	SDL_RenderDrawLine(renderer,128,48,rect.x,32);
 
-
 	SDL_SetRenderDrawColor(renderer,0,0,0,255);
 }
 
@@ -231,7 +267,7 @@ void update(int elapsed)
 	if(frame>=frameCycle) {
 		worldTranslate[1]=0;
 		frame=0;
-		
+
 		mapPos++;
 		if(mapPos>=mapPosMax) {
 			mapPos=0;
