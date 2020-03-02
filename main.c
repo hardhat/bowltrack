@@ -6,6 +6,7 @@
 
 #include "render.h"
 #include "bowl.h"
+#include "export.h"
 
 #define SCREEN_WIDTH 256
 #define SCREEN_HEIGHT 192
@@ -27,6 +28,8 @@ int main(int argc,char **argv)
 	//Create window
 	SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, 0, &rootWindow, &renderer);
 	SDL_SetWindowTitle(rootWindow, "Bowl Track");	
+	
+	sprites2C("testsprites.spr");
 	
 	int quit=0;
 	while(!quit) {

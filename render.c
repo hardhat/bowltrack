@@ -195,7 +195,10 @@ void draw(SDL_Renderer *renderer)
             exportName2C(path);
             sprintf(path,"testpatcol%d.c",exp);
             exportPC2C(path);
-            //if(exp==1) exportPC(renderer,path);
+            if(exp==1) {
+            	sprintf(path,"test%d.pc",exp);
+            	exportPC(renderer,path,0);
+            }
 	    }
 	}
 

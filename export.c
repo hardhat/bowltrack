@@ -216,10 +216,11 @@ void encodeScreen(SDL_Renderer *renderer)
 	}
 }
 
-void exportPC(SDL_Renderer *renderer,const char *filename)
+void exportPC(SDL_Renderer *renderer,const char *filename,int mergeDup)
 {
+	int oldMergeDup=mergeDuplicates;
 	resetExport();
-	//mergeDuplicates=0;
+	mergeDuplicates=mergeDup;
 	encodeScreen(renderer);
 
 	int j;
@@ -243,6 +244,7 @@ void exportPC(SDL_Renderer *renderer,const char *filename)
 		fwrite(colorTable[j],256,8,file);
 	}
 	fclose(file);
+	mergeDuplicates=oldMergeDup;
 }
 
 void exportPC2C(const char *filename)
@@ -317,3 +319,5 @@ void exportBMP(SDL_Renderer *renderer,const char *filename)
       SDL_FreeSurface(screenShot);
    }
 }
+
+
