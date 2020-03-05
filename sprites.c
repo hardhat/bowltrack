@@ -6,8 +6,8 @@
 
 #include "export.h"
 
-#define WIDTH 48
-#define HEIGHT 64
+#define WIDTH 32
+#define HEIGHT 43
 
 struct Color {
 	unsigned char y;

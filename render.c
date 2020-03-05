@@ -11,8 +11,8 @@
 double localTranslate[3]={0.0,-16.0,0.0};
 double worldScale[3]={8.0,64.0,1.0};
 double worldTranslate[3]={0.0,32.0,0.0};
-int screenTranslate[2]={128,96};
-double screenD=32.0;
+int screenTranslate[2]={128,64};
+double screenD=96.0;
 double frameYIncrement=-23.3333333333;
 int frameCycle=3;
 int frame=0;
@@ -27,11 +27,11 @@ void mapToWorld(int mx,int my,int mz,double *wx,double *wy,double *wz)
 	double curl=0.0;
 	switch(map[mapNode].type) {
 	case MT_TURNLEFT:
-		curl=my*my*4;
+		curl=my*my;
 		//printf("curl left: %lf (y=%d)\n",curl,my);
 		break;
 	case MT_TURNRIGHT:
-		curl=-my*my*4;
+		curl=-my*my;
 		//printf("curl right: %lf (y=%d)\n",curl,my);
 		break;
 	default:
@@ -104,7 +104,7 @@ void draw(SDL_Renderer *renderer)
 		double wx1,wy1,wz1;
 		SDL_Point point[2];
 		
-		if((y%2)==0 && y<6) {
+		if(((y/2)%2)==0 && y<10) {
 			SDL_SetRenderDrawColor(renderer,64,192,224,255);
 		} else {
 			SDL_SetRenderDrawColor(renderer,224,224,224,255);
@@ -205,9 +205,9 @@ void draw(SDL_Renderer *renderer)
 	// Player
 	rect.x=128;
 	rect.y=192-80;
-	rect.w=48;
-	rect.h=64;
-	SDL_Rect src={mapNode*48,0,48,64};
+	rect.w=32;
+	rect.h=43;
+	SDL_Rect src={mapNode*32,0,32,43};
 	if(!spriteSurface) spriteSurface=IMG_Load("sprites.tga");
 
 	if(!spriteSurface) {
