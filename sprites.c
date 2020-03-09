@@ -114,11 +114,11 @@ void sprites2C(const char *filename)
 	
 	fprintf(file,"byte SPATT[]={\n");
 	
-	for(frame=0;frame<4;frame++) {
+	for(frame=0;frame<8;frame++) {
 		spriteFrame=frame;
 		fprintf(file,"// Frame %d ==========\n",frame);
 		for(i=1;i<16;i++) {
-			fprintf(file,"/* Output color %d */\n",i);
+			//fprintf(file,"/* Output color %d */\n",i);
 			count+=buildSprites(file,i,i);
 		}
 	}
