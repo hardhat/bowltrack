@@ -29,7 +29,9 @@ int main(int argc,char **argv)
 	SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, 0, &rootWindow, &renderer);
 	SDL_SetWindowTitle(rootWindow, "Bowl Track");	
 	
-	sprites2C("testsprites.spr");
+	sprites2C("testsprites.c");
+	spriteReset();
+	sprites2PPSPR("testsprites.ppspr");
 	
 	int quit=0;
 	while(!quit) {
