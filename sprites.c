@@ -133,14 +133,14 @@ void sprites2C(const char *filename)
 			frameCount[frame]+=built;
 		}
 	}
-	fprintf(file,"};\n\nconst byte SCOLOR[]={\n");
-	for(i=nextColor-1;i>=0;i--) {
+	fprintf(file,"};\n\nconst byte STABLE[]={\n");
+	for(i=0;i<nextColor;i++) {
 	fprintf(file,"0x%02x,0x%02x,0x%02x,0x%02x",color[i].y,color[i].x,color[i].patt,color[i].color);
 		if((i%4)==3) fprintf(file,",\n"); else fprintf(file,",");
 	}
 
 	fprintf(file,"};\n/* Made %d sprites */\nconst int SPATT_LENGTH=%d;\n",count,count*32);
-	fprintf(file,"const int SCOLOR_LENGTH=%d;\n",count*4);
+	fprintf(file,"const int STABLE_LENGTH=%d;\n",count*4);
 	
 	fprintf(file,"\nconst int frameIndex[]={\n");
 	for(i=0;i<frame;i++) {
