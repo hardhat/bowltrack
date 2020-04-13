@@ -33,7 +33,7 @@ int getSpritePixel(int x,int y)
 	unsigned char *p=((unsigned char *)spriteSurface->pixels)+spriteSurface->pitch*y+(x+spriteFrame*WIDTH)*spriteSurface->format->BytesPerPixel;
 	uint32_t pixel=*(uint32_t *)p;
 	Uint8 rgba[4];
-	SDL_GetRGBA(pixel,spriteSurface->format,rgba+0,rgba+1,rgba+2,rgba+3);	
+	SDL_GetRGBA(pixel,spriteSurface->format,rgba+0,rgba+1,rgba+2,rgba+3);
 	if(rgba[3]<128) return 0;	// transparent
 	return rgbToColecoPalette(rgba);
 }
@@ -68,7 +68,7 @@ int buildSprites(FILE *file,int ch,int coleco)
 		printf("*** Sprite buffer overflow.  Export aborted\n");
 		return 0;
 	}
-	int sx,sy,px,py,cx,ry,bx;
+	int sx,sy,cx,ry,bx;
 	for(sy=0;sy<sh;sy++) {	// sprite y
 		for(sx=0;sx<sw;sx++) {	// sprite x
 			color[nextColor].x=xmin+sx*16;
@@ -92,7 +92,7 @@ int buildSprites(FILE *file,int ch,int coleco)
 					} else {
 						fprintf(file,"%c",c);
 					}
-				}			
+				}
 			}
 		}
 	}
@@ -108,7 +108,7 @@ void sprites2C(const char *filename)
 	char base[256];
 	int frameIndex[256];
 	int frameCount[256];
-	
+
 	file=fopen(filename,"w");
 	if(!file) {
 		printf("Could not create '%s'\n",filename);
@@ -118,9 +118,9 @@ void sprites2C(const char *filename)
 	if(strchr(base,'.')) {
         strchr(base,'.')[0]=0;
 	}
-	
+
 	fprintf(file,"const byte SPATT[]={\n");
-	
+
 	for(frame=0;frame<8;frame++) {
 		spriteFrame=frame;
 		fprintf(file,"// Frame %d ==========\n",frame);
@@ -141,7 +141,7 @@ void sprites2C(const char *filename)
 
 	fprintf(file,"};\n/* Made %d sprites */\nconst int SPATT_LENGTH=%d;\n",count,count*32);
 	fprintf(file,"const int STABLE_LENGTH=%d;\n",count*4);
-	
+
 	fprintf(file,"\nconst int frameIndex[]={\n");
 	for(i=0;i<frame;i++) {
 		fprintf(file,"%d,",frameIndex[i]);
@@ -151,7 +151,7 @@ void sprites2C(const char *filename)
 		fprintf(file,"%d,",frameCount[i]);
 	}
 	fprintf(file,"\n};\nconst int FRAME_LENGTH=%d;",frame);
-	
+
 	fclose(file);
 }
 
@@ -163,7 +163,7 @@ void sprites2PPSPR(const char *filename)
 	int i;
 	int frameIndex[256];
 	int frameCount[256];
-		
+
 	file=fopen(filename,"wb");	// binary write
 	if(!file) {
 		printf("Could not create '%s'\n",filename);

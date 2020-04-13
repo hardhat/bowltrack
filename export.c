@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <SDL.h>
 
@@ -111,7 +112,7 @@ void encodeSegment(unsigned char *pixels,unsigned char *pattern,unsigned char *c
 	int i;
 	int pix[8];
 	int freq[16];
-	int fg=-1,bg=-1;
+	int fg=0,bg=0;
 	int fgFreq=0,bgFreq=0;
 
 	for(i=0;i<16;i++) freq[i]=0;
@@ -137,6 +138,14 @@ void encodeSegment(unsigned char *pixels,unsigned char *pattern,unsigned char *c
 			fg=bg;
 			bg=temp;
 		}
+	}
+
+	if(fg<bg) {
+            int temp;
+
+			temp=fg;
+			fg=bg;
+			bg=temp;
 	}
 
 	// encode segment
@@ -214,6 +223,7 @@ void encodeScreen(SDL_Renderer *renderer)
 			encodeCard(renderer,i,j);
 		}
 	}
+	printf("Cards used: %d,%d,%d\n",nextCard[0],nextCard[1],nextCard[2]);
 }
 
 void exportPC(SDL_Renderer *renderer,const char *filename,int mergeDup)
@@ -261,17 +271,17 @@ void exportPC2C(const char *filename)
         strchr(base,'.')[0]=0;
 	}
 
-	for(j=0;j<3;j++) {
-		fprintf(file,"const int %s_region%d_size=%d;\n",filename,j,nextCard[j]*8);
+	for(j=1;j<3;j++) {
+		fprintf(file,"const int %s_size%d=%d;\n",base,j,nextCard[j]*8);
 
-		fprintf(file,"const unsigned char %s_pattern_region%d[]={\n	",base,j);
+		fprintf(file,"const unsigned char %s_pat%d[]={\n	",base,j);
 		for(i=0;i<nextCard[j]*8;i++) {
 			fprintf(file,"0x%02x,",patternTable[j][i]);
 			if((i%8)==7) fprintf(file,"\n	");
 		}
 		fprintf(file,"}; // region %d\n\n",j);
 
-		fprintf(file,"const unsigned char %s_color_region%d[]={\n	",base,j);
+		fprintf(file,"const unsigned char %s_col%d[]={\n	",base,j);
 		for(i=0;i<nextCard[j]*8;i++) {
 			fprintf(file,"0x%02x,",colorTable[j][i]);
 			if((i%8)==7) fprintf(file,"\n	");
@@ -295,7 +305,7 @@ void exportName2C(const char *filename)
 	}
 
 	int i,j;
-	for(j=0;j<3;j++) {
+	for(j=1;j<3;j++) {
 		fprintf(file,"const unsigned char %s_name%d[]={\n	",base,j);
 		for(i=0;i<256;i++) {
 			fprintf(file,"0x%02x,",nameTable[j][i]);

@@ -82,7 +82,7 @@ void draw(SDL_Renderer *renderer)
 	SDL_Rect rect={0,0,256,192};
 
 	// Draw Snow
-	SDL_SetRenderDrawColor(renderer,64,96,224,255);
+    SDL_SetRenderDrawColor(renderer,64,96,224,255);
 	rect.y=64;
 	rect.h=128;
 	SDL_RenderFillRect(renderer,&rect);
@@ -95,20 +95,19 @@ void draw(SDL_Renderer *renderer)
 	worldScale[0]=512.0/bowl->width;
 	worldScale[1]=512.0/bowl->length;
 	worldScale[2]=0.8;
-	frameCycle=5;
-	frameYIncrement=-worldScale[1]/frameCycle*2.0;
+	frameCycle=3;
+	//frameYIncrement=-worldScale[1]/frameCycle;
+	frameYIncrement=0;
 
 	int x,y;
 	for(y=bowl->length-1;y>=0;y--) {
 		double wx,wy,wz;
 		double wx1,wy1,wz1;
 		SDL_Point point[2];
-		
-		if(((y/2)%2)==0 && y<10) {
-			SDL_SetRenderDrawColor(renderer,64,192,224,255);
-		} else {
-			SDL_SetRenderDrawColor(renderer,224,224,224,255);
-		}
+
+		int baseColor=((y+frame)%3)==0 && y<10;
+
+        SDL_SetRenderDrawColor(renderer,224,224,224,255);
 		//printf("length %d (%s)\n",y,(y%2)==0?"blue":"white");
 
 		if(y+1>=bowl->length) continue;
@@ -152,7 +151,9 @@ void draw(SDL_Renderer *renderer)
 
 		int lastsx=256;
 
+
 		for(x=0;x<bowl->width;x++) {
+			SDL_SetRenderDrawColor(renderer,224,224,224,255);
 			if(y+1>=bowl->length) continue;
 			mapToWorld(x,y+1,bowl->elevation[x+(y-1)*bowl->width],&wx1,&wy1,&wz1);
 			if(wy1<screenD) continue;
@@ -165,7 +166,9 @@ void draw(SDL_Renderer *renderer)
 				wz=wz*per+wz1*(1-per);
 			}
 			worldToScreen(wx,wy,wz,point+0);
-
+            if(baseColor) {
+                SDL_SetRenderDrawColor(renderer,64,192,224,255);
+            }
 			//printf("line (%d,%d)-(%d,%d)\n",point[0].x,point[0].y,point[0].x,191);
 			SDL_RenderDrawLine(renderer,point[0].x,point[0].y,point[0].x,191);
 			if(lastsx+1<point[0].x) {
@@ -181,23 +184,42 @@ void draw(SDL_Renderer *renderer)
 	rect.x=0;
 	rect.y=0;
 	rect.w=256;
-	rect.h=64;
+	rect.h=64+8;
+
 	SDL_RenderFillRect(renderer,&rect);
+
+    // Draw Border
+    SDL_SetRenderDrawColor(renderer,64,96,224,255);
+	rect.y=64;
+	rect.w=16;
+	rect.h=128;
+	//SDL_RenderFillRect(renderer,&rect);
+	rect.x=240;
+	//SDL_RenderFillRect(renderer,&rect);
+
 
 	{
 	    static int exp=0;
 	    char path[256];
-	    if(exp<3) {
+	    int maxExp=3;
+	    if(map[mapNode].type==MT_TURNLEFT) maxExp=6;
+	    if(map[mapNode].type==MT_TURNRIGHT) maxExp=9;
+	    if(exp<maxExp) {
             exp++;
-            if(exp==1) resetExport();
-            encodeScreen(renderer);
-            sprintf(path,"testname%d.c",exp);
-            exportName2C(path);
-            sprintf(path,"testpatcol%d.c",exp);
-            exportPC2C(path);
             if(exp==1) {
-            	sprintf(path,"test%d.pc",exp);
+            	sprintf(path,"hill%d.pc",exp);
+                resetExport();
             	exportPC(renderer,path,0);
+            }
+            if((exp%3)==1) resetExport();
+            //resetExport();
+            encodeScreen(renderer);
+            //const char *prefix[3]={"straight","turnleft","turnright"};
+            sprintf(path,"hill%d.c",exp);
+            exportName2C(path);
+            if((exp%3)==0) {
+                sprintf(path,"hillpc%d.c",exp);
+                exportPC2C(path);
             }
 	    }
 	}
